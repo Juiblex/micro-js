@@ -2,6 +2,7 @@
  * http://raganwald.com/2014/04/10/mixins-forwarding-delegation.html */
 
 function extend(target, src) { // extend target with properties from src
+	var prop;
 	for (prop in src) {
 		if (src.hasOwnProperty(prop)) {
 				// check that it's from src and not its prototype
@@ -57,6 +58,7 @@ console.log(ferrari.name());
 
 function extendShield(target, src) {
 	var hidden = {};
+	var prop;
 	for (prop in src) {
 		if (src.hasOwnProperty(prop)) {
 			target[prop] = src[prop].bind(hidden);
