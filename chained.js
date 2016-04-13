@@ -1,4 +1,4 @@
-// Flow checks this without errors but there is
+// Flow checks this without errors but there are
 // It's used a lot in jQuery
 
 var Car = function() {

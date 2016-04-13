@@ -1,6 +1,8 @@
 /* Mostly adapted from
  * http://raganwald.com/2014/04/10/mixins-forwarding-delegation.html */
 
+// Basic version, doesn't shield _price (like jQuery.extend())
+
 function extend(target, src) { // extend target with properties from src
 	var prop;
 	for (prop in src) {
@@ -16,7 +18,6 @@ var Car = function() {
 	this.wheels = 4;
 }
 
-// Basic version, doesn't shield _price
 
 var Price = {
 	price: function() {
@@ -54,14 +55,17 @@ ferrari.setName("ferrari");
 console.log(ferrari.name());
 // ferrari._name = undefined
 
-// Advanced version
+// Object version with shielding
 
 function extendShield(target, src) {
 	var hidden = {};
 	var prop;
 	for (prop in src) {
-		if (src.hasOwnProperty(prop)) {
+		if (src.hasOwnProperty(prop) && (typeof src[prop] === 'function')) {
 			target[prop] = src[prop].bind(hidden);
+		}
+		else {
+			hidden[prop] = src[prop];
 		}
 	}
 };
@@ -70,8 +74,8 @@ var Bike = function() {
 	this.wheels = 2;
 }
 
+extendShield(Bike.prototype, Price);
 var myBike = new Bike();
-extendShield(myBike, Price);
 myBike.setPrice(250);
 console.log(myBike.price());
 //myBike._price = undefined
