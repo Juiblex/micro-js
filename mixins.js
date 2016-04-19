@@ -12,11 +12,11 @@ function extend(target, src) { // extend target with properties from src
 			target[prop] = src[prop]; // overwrites existing properties from target
 		}
 	}
-}
+};
 
 var Car = function() {
 	this.wheels = 4;
-}
+};
 
 
 var Price = {
@@ -55,7 +55,7 @@ ferrari.setName("ferrari");
 console.log(ferrari.name());
 // ferrari._name = undefined
 
-// Object version with shielding
+// Object version with shielding -> more or less like traits
 
 function extendShield(target, src) {
 	var hidden = {};
