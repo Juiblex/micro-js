@@ -15,7 +15,7 @@
 %token CONC
 %token GRE GRT LEE LET EQ NEQ AND OR
 %token LP RP LCB RCB LSB RSB COMMA SEMICOLON COLON
-%token ASSIGN DOT
+%token ASSIGN DOT THIS
 %token IF THEN ELSE
 %token WHILE
 %token FUNCTION RETURN
@@ -96,6 +96,8 @@ expr:
 
   | e1 = expr; bin = binop; e2 = expr
     { {pedesc = PEbinop(bin, e1, e2); pos = loc $startpos $endpos} }
+
+  | THIS { {pedesc = PEthis; pos = loc $startpos $endpos} }
 ;
 
 %inline binop:
