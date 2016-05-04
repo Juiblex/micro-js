@@ -1,4 +1,4 @@
-FLAGS = -use-menhir -cflag -annot
+FLAGS = -use-menhir -cflag -annot -yaccflag --explain
 EXEC = microjs
 TARGET = main.native
 

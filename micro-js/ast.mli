@@ -1,6 +1,6 @@
 type binop =
   | Badd | Bsub | Bmul | Bdiv (* int -> int -> int *)
-  | Blt | Ble | Bgt | Bge | Beq | Bne (* int -> int -> bool *)
+  | Blt | Ble | Bgt | Bge | Beq | Bneq (* int -> int -> bool *)
   | Band | Bor (* bool -> bool -> bool *)
   | Bconc (* string -> string -> string *)
 
@@ -18,12 +18,15 @@ type pident = {
   pos: position;
 }
 
+type const =
+  | Cint of int
+  | Cbool of bool
+  | Cstring of string
+  | Cunit
+
 type pvalue =
-  | PVint of int
-  | PVbool of bool
-  | PVstring of string
-  | PVunit
-  | PVobj of (pident * pexpr) list
+  | PVconst of const
+  | PVobj of (pident * pvalue) list
   | PVabs of pident list * pstmt
 
 and pderef =
@@ -31,18 +34,19 @@ and pderef =
   | PDaccess of pexpr * pident
 
 and pexpr = {
-  pdesc: pedesc;
+  pedesc: pedesc;
   pos: position;
 }
 
 and pedesc =
-  | PEval of pvalue
+  | PEvalue of pvalue
   | PEderef of pderef
   | PEapp of pderef * pexpr list (* o.f(x1, ..., xn) *)
   | PEbinop of binop * pexpr * pexpr
+  | PEthis (* this.stuff *)
 
 and pstmt = {
-  pdesc: psdesc;
+  psdesc: psdesc;
   pos: position;
 }
 
@@ -54,3 +58,4 @@ and psdesc =
   | PSreturn of pexpr
   | PSblock of pstmt list
 
+type pprogram = {pstmts: pstmt list}
