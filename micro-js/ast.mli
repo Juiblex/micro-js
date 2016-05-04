@@ -23,6 +23,7 @@ type const =
   | Cbool of bool
   | Cstring of string
   | Cunit
+  | Cthis
 
 type pvalue =
   | PVconst of const
@@ -43,7 +44,6 @@ and pedesc =
   | PEderef of pderef
   | PEapp of pderef * pexpr list (* o.f(x1, ..., xn) *)
   | PEbinop of binop * pexpr * pexpr
-  | PEthis (* this.stuff *)
 
 and pstmt = {
   psdesc: psdesc;

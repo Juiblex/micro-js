@@ -12,7 +12,8 @@
 
   let kwd_tbl =
     ["if", IF; "then", THEN; "else", ELSE; "while", WHILE; "function", FUNCTION;
-     "return", RETURN; "this", THIS]
+     "return", RETURN; "this", CONST Ast.Cthis; "true", CONST (Ast.Cbool true);
+     "false", CONST (Ast.Cbool false)]
 
   let str_to_char = function
     | "\\\\" -> '\\'
@@ -69,8 +70,6 @@ rule token = parse
   | ':' { COLON }
   | '.' { DOT }
   | '"' { begin_pos := lexbuf.lex_start_p; str_lex [] lexbuf }
-  | "true" { CONST (Ast.Cbool true) }
-  | "false" { CONST (Ast.Cbool false) }
   | ident as s {
     if List.exists (fun x -> fst x = s) kwd_tbl then
       List.assoc s kwd_tbl

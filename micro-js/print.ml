@@ -39,6 +39,7 @@ let pprint {pstmts = stmts} =
       | Cbool b -> Printf.printf "Cbool %s" (bool_to_str b)
       | Cstring s -> Printf.printf "Cstring \"%s\"" (String.escaped s)
       | Cunit -> Printf.printf "Cunit"
+      | Cthis -> Printf.printf "Cthis"
     end;
     print_newline ();
   and p_value v =
@@ -70,7 +71,6 @@ let pprint {pstmts = stmts} =
           List.iter p_expr args;
       | PEbinop(b, e1, e2) -> Printf.printf "PEbinop: %s " (bin_to_str b);
           p_pos p; p_expr e1; p_expr e2;
-      | PEthis -> print_string "PEthis "; p_pos p
     end;
     decr prof;
   and p_stmt {psdesc = s; pos = p} =
