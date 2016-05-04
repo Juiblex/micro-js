@@ -53,10 +53,10 @@ stmt:
   | d = deref ASSIGN e = expr
     { {psdesc = PSassign(d, e); pos = loc $startpos $endpos} }
 
-  | IF e = expr THEN b1 = block ELSE b2 = block
+  | IF LP e = expr RP THEN b1 = block ELSE b2 = block
     { {psdesc = PScond(e, b1, b2); pos = loc $startpos $endpos} }
 
-  | WHILE e = expr b = block
+  | WHILE LP e = expr RP b = block
     { {psdesc = PSloop(e, b); pos = loc $startpos $endpos} }
 
   | b = block { b }

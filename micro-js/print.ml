@@ -49,7 +49,9 @@ let pprint {pstmts = stmts} =
       | PVobj l -> print_string "PVobj\n"; incr prof;
           List.iter (fun (i, v) -> hyphens !prof; p_ident i; p_value v) l;
           decr prof;
-      | PVabs(ids, s) -> print_string "PVabs "; List.iter p_ident ids; p_stmt s
+      | PVabs(ids, s) -> print_string "PVabs\n"; incr prof;
+          List.iter (fun i -> hyphens !prof; p_ident i) ids;
+          decr prof; p_stmt s
     end;
   and p_ident {pid = i; pos = p} =
     Printf.printf "%s " i; p_pos p;
