@@ -35,7 +35,8 @@
 %%
 
 prog:
-  | stmts = cstmt+ EOF { {pstmts = stmts} }
+  | stmts = cstmt+ EOF
+    { {prog = {psdesc = PSblock stmts; pos = loc $startpos $endpos}} }
 ;
 
 cstmt: (* doing away with lists and whatnot *)

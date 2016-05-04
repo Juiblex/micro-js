@@ -1,5 +1,6 @@
 open Ast
 open Lexing
+open Interp
 
 let print_past = ref false
 
@@ -8,8 +9,8 @@ let ifile = ref ""
 let set_file f s = f := s
 
 let options =
-  ["--print-past", Arg.Set print_past,
-   "  Print the parsing abstract syntax tree"]
+  ["--print-ast", Arg.Set print_past,
+   "  Print the abstract syntax tree"]
 
 let usage = "microjs [options] <file>.js"
 

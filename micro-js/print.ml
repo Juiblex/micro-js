@@ -31,7 +31,7 @@ let p_pos p =
   else
     Printf.printf "line %d:%d - line %d:%d\n" p.slin p.scol p.elin p.ecol
 
-let pprint {pstmts = stmts} =
+let pprint {prog = s} = 
   let prof = ref 0 in
   let rec p_const c = 
     begin match c with
@@ -88,5 +88,5 @@ let pprint {pstmts = stmts} =
       | PSblock l -> print_string "PSblock "; p_pos p; List.iter p_stmt l
     end;
     decr prof;
-  in List.iter p_stmt stmts;
+  in p_stmt s;
 

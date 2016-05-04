@@ -58,4 +58,4 @@ and psdesc =
   | PSreturn of pexpr
   | PSblock of pstmt list
 
-type pprogram = {pstmts: pstmt list}
+type pprogram = {prog: pstmt}
