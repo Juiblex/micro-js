@@ -27,7 +27,7 @@ type const =
 type pvalue =
   | PVconst of const
   | PVobj of (pident * pvalue) list
-  | PVabs of pident list * pstmt
+  | PVabs of pident list * pstmt (* fun(x1, ..., xn) { s } *)
 
 and pderef =
   | PDident of pident

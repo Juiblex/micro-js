@@ -46,6 +46,7 @@ let () =
       Print.pprint p;
       exit 0;
     end;
+    ignore (Interp.e_prog p);
   with
     | Lexer.Lexing_error c ->
         location (Lexing.lexeme_start_p buf);
@@ -54,5 +55,22 @@ let () =
     | Parser.Error ->
         location (Lexing.lexeme_start_p buf);
         Printf.printf "Parsing error\n";
+        exit 1
+    | Interp.Wrong_arity(exp, act, pos) ->
+        loc_p pos;
+        Printf.printf "Wrong arity: expected %d argument(s), received %d\n"
+          exp act;
+        exit 1
+    | Interp.Not_a_function pos ->
+        loc_p pos;
+        Printf.printf "This expression is not a function\n";
+        exit 1
+    | Interp.Division_by_zero pos ->
+        loc_p pos;
+        Printf.printf "Division by zero \n";
+        exit 1
+    | Interp.Wrong_type pos ->
+        loc_p pos;
+        Printf.printf "This expression does not type\n";
         exit 1
 
