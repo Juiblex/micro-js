@@ -27,6 +27,7 @@
 %left PLUS MINUS
 %left TIMES DIV
 %left DOT
+%right LP (* for stuff like e1 && e2(x) that is really e1 && (e2(x)) *)
 
 %start prog
 
@@ -92,8 +93,8 @@ expr:
 
   | d = deref { {pedesc = PEderef d; pos = loc $startpos $endpos} }
 
-  | d = deref LP args = separated_list(COMMA, expr) RP
-    { {pedesc = PEapp(d, args); pos = loc $startpos $endpos} }
+  | f = expr LP args = separated_list(COMMA, expr) RP
+    { {pedesc = PEapp(f, args); pos = loc $startpos $endpos} }
 
   | e1 = expr; bin = binop; e2 = expr
     { {pedesc = PEbinop(bin, e1, e2); pos = loc $startpos $endpos} }

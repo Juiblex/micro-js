@@ -46,7 +46,7 @@ let rec e_expr mem {pedesc = e; pos = p} = (* returns (memory, value) *)
     | PEvalue v -> (mem, v)
 
     | PEapp(func, args) ->
-      let (mem, func) = get_val mem func in (* func is now a pvalue *)
+      let (mem, func) = e_expr mem func in (* func is now a pvalue *)
       let rec e_args mem res = function (* left-to-right evaluation *)
         | [] -> (mem, List.rev res)
         | a::args -> let (mem', v) = e_expr mem a in
@@ -81,6 +81,8 @@ let rec e_expr mem {pedesc = e; pos = p} = (* returns (memory, value) *)
                   | Ble -> Cbool (i1 <= i2)
                   | Bgt -> Cbool (i1 > i2)
                   | Bge -> Cbool (i1 >= i2)
+                  | Beq -> Cbool (i1 == i2)
+                  | Bneq -> Cbool (i1 != i2)
                   | _ -> failwith "never happens"
                 in PVconst res
               | _ -> raise (Wrong_type p)

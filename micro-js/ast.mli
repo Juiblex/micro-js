@@ -41,7 +41,7 @@ and pexpr = {
 and pedesc =
   | PEvalue of pvalue
   | PEderef of pderef
-  | PEapp of pderef * pexpr list (* o.f(x1, ..., xn) *)
+  | PEapp of pexpr * pexpr list (* o.f(x1, ..., xn) *)
   | PEbinop of binop * pexpr * pexpr
   | PEthis (* 'this' is here for simpler value evaluation *)
 

@@ -9,8 +9,8 @@ let ifile = ref ""
 let set_file f s = f := s
 
 let options =
-  ["--print-ast", Arg.Set print_past,
-   "  Print the abstract syntax tree"]
+  ["--print-past", Arg.Set print_past,
+   "  Print the parsing abstract syntax tree"]
 
 let usage = "microjs [options] <file>.js"
 

@@ -68,7 +68,7 @@ let pprint {prog = s} =
     begin match e with
       | PEvalue v -> print_string "PEvalue "; p_pos p; p_value v
       | PEderef d -> print_string "PEderef "; p_pos p; p_deref d
-      | PEapp(d, args) -> print_string "PEapp "; p_pos p; p_deref d;
+      | PEapp(f, args) -> print_string "PEapp "; p_pos p; p_expr f;
           List.iter p_expr args;
       | PEbinop(b, e1, e2) -> Printf.printf "PEbinop: %s " (bin_to_str b);
           p_pos p; p_expr e1; p_expr e2;
