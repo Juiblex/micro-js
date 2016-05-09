@@ -36,32 +36,24 @@
 %%
 
 prog:
-  | stmts = cstmt0+ EOF
+  | stmts = stmt0+ EOF
     { {prog = {psdesc = PSblock stmts; pos = loc $startpos $endpos}} }
 ;
 
-cstmt0: (* doing away with lists and whatnot *)
-  | s = stmt0 SEMICOLON { s }
-;
-
-cstmt:
-  | s = stmt SEMICOLON { s }
-;
-
 block0:
-  | LCB stmts = cstmt0* RCB
+  | LCB stmts = stmt0* RCB
     { {psdesc = PSblock stmts; pos = loc $startpos $endpos} }
 ;
 
 block:
-  | LCB stmts = cstmt* RCB
+  | LCB stmts = stmt* RCB
     { {psdesc = PSblock stmts; pos = loc $startpos $endpos} }
 ;
 
 stmt0: (* outside a function statement *)
-  | e = expr { {psdesc = PSexpr e; pos = loc $startpos $endpos} }
+  | e = expr SEMICOLON { {psdesc = PSexpr e; pos = loc $startpos $endpos} }
 
-  | d = deref ASSIGN e = expr
+  | d = deref ASSIGN e = expr SEMICOLON
     { {psdesc = PSassign(d, e); pos = loc $startpos $endpos} }
 
   | IF LP e = expr RP b1 = block0 ELSE b2 = block0
@@ -73,9 +65,9 @@ stmt0: (* outside a function statement *)
 ;
 
 stmt:
-  | e = expr { {psdesc = PSexpr e; pos = loc $startpos $endpos} }
+  | e = expr SEMICOLON { {psdesc = PSexpr e; pos = loc $startpos $endpos} }
 
-  | d = deref ASSIGN e = expr
+  | d = deref ASSIGN e = expr SEMICOLON
     { {psdesc = PSassign(d, e); pos = loc $startpos $endpos} }
 
   | IF LP e = expr RP b1 = block ELSE b2 = block
@@ -84,7 +76,7 @@ stmt:
   | WHILE LP e = expr RP b = block
     { {psdesc = PSloop(e, b); pos = loc $startpos $endpos} }
 
-  | RETURN e = expr? {
+  | RETURN e = expr? SEMICOLON {
     let e = match e with
       | Some pexp -> pexp
       | None -> {pedesc = PEvalue (PVconst Cunit); pos = loc $endpos $endpos} in
