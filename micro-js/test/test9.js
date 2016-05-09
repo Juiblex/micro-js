@@ -3,7 +3,9 @@ isZero = function(x) {
 		return true;
 	} else {
 		return false;
-	};
+	}
 };
 
-isZero(1);
+
+
+print(isZero(0));
