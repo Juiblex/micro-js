@@ -149,9 +149,26 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
     in (mem, res)
   | _ -> failwith "Expression not implemented yet!"
 
-and e_stmt mem {psdesc = s; pos = p} = (* returns (memory, mvalue) *)
+and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
   match s with
   | PSexpr e -> e_expr mem e
+
+  | PScond(cond, s1, s2) ->
+      let (mem, v) = e_expr mem cond in
+      begin match v with
+        | MVconst (Cbool true) -> e_stmt mem s1
+        | MVconst (Cbool false) -> e_stmt mem s2
+        | _ -> raise (Wrong_type p) 
+      end
+
+  | PSloop(cond, s) ->
+      let (mem, v) = e_expr mem cond in
+      begin match v with
+        | MVconst (Cbool true) -> let (mem, _) = e_stmt mem s in e_stmt mem stm
+        | MVconst (Cbool false) -> (mem, MVconst Cunit)
+        | _ -> raise (Wrong_type p) 
+      end
+
   | PSblock stmts ->
       let lossy_eval mem s = let (m, v) = e_stmt mem s in m in
       (List.fold_left lossy_eval mem stmts, MVconst Cunit)
