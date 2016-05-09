@@ -11,7 +11,7 @@
       { pos with pos_lnum = pos.pos_lnum + 1; pos_bol = pos.pos_cnum }
 
   let kwd_tbl =
-    ["if", IF; "then", THEN; "else", ELSE; "while", WHILE; "function", FUNCTION;
+    ["if", IF; "else", ELSE; "while", WHILE; "function", FUNCTION;
      "return", RETURN; "this", THIS; "true", CONST (Ast.Cbool true);
      "false", CONST (Ast.Cbool false)]
 

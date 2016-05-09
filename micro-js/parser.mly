@@ -16,7 +16,7 @@
 %token GRE GRT LEE LET EQ NEQ AND OR
 %token LP RP LCB RCB LSB RSB COMMA SEMICOLON COLON
 %token ASSIGN DOT THIS
-%token IF THEN ELSE
+%token IF ELSE
 %token WHILE
 %token FUNCTION RETURN
 
@@ -36,17 +36,40 @@
 %%
 
 prog:
-  | stmts = cstmt+ EOF
+  | stmts = cstmt0+ EOF
     { {prog = {psdesc = PSblock stmts; pos = loc $startpos $endpos}} }
 ;
 
-cstmt: (* doing away with lists and whatnot *)
+cstmt0: (* doing away with lists and whatnot *)
+  | s = stmt0 SEMICOLON { s }
+;
+
+cstmt:
   | s = stmt SEMICOLON { s }
+;
+
+block0:
+  | LCB stmts = cstmt0* RCB
+    { {psdesc = PSblock stmts; pos = loc $startpos $endpos} }
 ;
 
 block:
   | LCB stmts = cstmt* RCB
     { {psdesc = PSblock stmts; pos = loc $startpos $endpos} }
+;
+
+stmt0: (* outside a function statement *)
+  | e = expr { {psdesc = PSexpr e; pos = loc $startpos $endpos} }
+
+  | d = deref ASSIGN e = expr
+    { {psdesc = PSassign(d, e); pos = loc $startpos $endpos} }
+
+  | IF LP e = expr RP b1 = block0 ELSE b2 = block0
+    { {psdesc = PScond(e, b1, b2); pos = loc $startpos $endpos} }
+
+  | WHILE LP e = expr RP b = block0
+    { {psdesc = PSloop(e, b); pos = loc $startpos $endpos} }
+
 ;
 
 stmt:
@@ -55,13 +78,11 @@ stmt:
   | d = deref ASSIGN e = expr
     { {psdesc = PSassign(d, e); pos = loc $startpos $endpos} }
 
-  | IF LP e = expr RP THEN b1 = block ELSE b2 = block
+  | IF LP e = expr RP b1 = block ELSE b2 = block
     { {psdesc = PScond(e, b1, b2); pos = loc $startpos $endpos} }
 
   | WHILE LP e = expr RP b = block
     { {psdesc = PSloop(e, b); pos = loc $startpos $endpos} }
-
-  | b = block { b }
 
   | RETURN e = expr? {
     let e = match e with

@@ -9,8 +9,8 @@ let ifile = ref ""
 let set_file f s = f := s
 
 let options =
-  ["--print-past", Arg.Set print_past,
-   "  Print the parsing abstract syntax tree"]
+  ["--print-ast", Arg.Set print_past,
+   "  Print the abstract syntax tree"]
 
 let usage = "microjs [options] <file>.js"
 
@@ -54,7 +54,7 @@ let () =
         exit 1
     | Parser.Error ->
         location (Lexing.lexeme_start_p buf);
-        Printf.printf "Parsing error\n";
+        print_string "Parse error\n";
         exit 1
     | Interp.Wrong_arity(exp, act, pos) ->
         loc_p pos;
@@ -63,14 +63,18 @@ let () =
         exit 1
     | Interp.Not_a_function pos ->
         loc_p pos;
-        Printf.printf "This expression is not a function\n";
+        print_string "This expression is not a function\n";
         exit 1
     | Interp.Division_by_zero pos ->
         loc_p pos;
-        Printf.printf "Division by zero \n";
+        print_string "Division by zero\n";
         exit 1
     | Interp.Wrong_type pos ->
         loc_p pos;
-        Printf.printf "This expression does not type\n";
+        print_string "This expression does not type\n";
+        exit 1
+    | Interp.Redefined_field pid ->
+        loc_p pid.pos;
+        Printf.printf "Redefined field %s\n" pid.pid;
         exit 1
 

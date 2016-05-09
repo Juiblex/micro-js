@@ -4,8 +4,6 @@ type binop =
   | Band | Bor (* bool -> bool -> bool *)
   | Bconc (* string -> string -> string *)
 
-(* Parsing abstract syntax *)
-
 type position = {
   slin: int;
   scol: int;
@@ -59,3 +57,19 @@ and psdesc =
   | PSblock of pstmt list
 
 type pprogram = {prog: pstmt}
+
+type store = Location.t Map.Make(String).t (* a store maps variables to heap locations *)
+
+type ident = string
+
+type mvalue =
+  | MVconst of const
+  | MVobj of Location.t (* the location of the object in the object heap *)
+  | MVclos of store * (ident list) * pstmt (* closure vars * args * body *)
+
+type mobject = store (* a memory object is really the store of its fields *)
+
+type memory =
+  {local: store;
+   closure: store;
+   global: store}
