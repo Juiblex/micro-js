@@ -1,0 +1,1 @@
+print([x: 2, y:3, z:function() {}]);
