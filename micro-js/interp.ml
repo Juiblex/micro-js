@@ -2,9 +2,11 @@ open Ast
 
 exception Wrong_arity of int * int * position (* expected, actual *)
 exception Not_a_function of position
+exception Not_an_object of position
 exception Division_by_zero of position
 exception Wrong_type of position
 exception Undeclared_variable of pident
+exception Undefined_field of pident
 exception Redefined_field of pident
 
 exception Return of memory * mvalue (* for the PSreturn statement *)
@@ -73,7 +75,15 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
       else
         raise (Undeclared_variable var) in
       (mem, Hashtbl.find vheap loc)
-    | PDaccess(e, i) -> failwith "access not implemented yet"
+    | PDaccess(e, ({pid = id} as field)) ->
+        let (mem, obj) = e_expr mem e in
+        match obj with
+          | MVobj oloc -> let fields = Hashtbl.find oheap oloc in
+            let floc = try Smap.find id fields
+              with Not_found -> raise (Undefined_field field) in
+            (mem, Hashtbl.find vheap floc)
+
+          | _ -> raise (Not_an_object p)
   end
   
   | PEapp(func, args) ->

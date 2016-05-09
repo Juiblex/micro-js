@@ -77,4 +77,8 @@ let () =
         loc_p pid.pos;
         Printf.printf "Redefined field %s\n" pid.pid;
         exit 1
+    | Interp.Undefined_field pid ->
+        loc_p pid.pos;
+        Printf.printf "Undefined field %s\n" pid.pid;
+        exit 1
 
