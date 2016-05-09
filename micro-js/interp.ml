@@ -34,6 +34,8 @@ let rec print = function
       print_string "["; Smap.iter print_field fields; print_string "\b\b]"
   | MVclos(_, _, _) -> print_string "function"
 
+(* if we switch object fields to expressions, then that will modify
+   the memory *)
 let rec e_value mem = function (* doesn't modify the memory, just the heap *)
   | PVconst c -> MVconst c
   | PVobj fields ->
@@ -71,7 +73,7 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
       else
         raise (Undeclared_variable var) in
       (mem, Hashtbl.find vheap loc)
-    | PDaccess(e, i) -> failwith "bar"
+    | PDaccess(e, i) -> failwith "access not implemented yet"
   end
   
   | PEapp(func, args) ->
@@ -94,6 +96,47 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
         | _ -> raise (Not_a_function p)
       end
 
+  | PEbinop(bin, e1, e2) ->
+    let (mem, v1) = e_expr mem e1 in
+    let (mem, v2) = e_expr mem e2 in
+    let res = match bin with
+      | Badd | Bsub | Bmul | Bdiv
+      | Blt | Ble | Bgt | Bge | Beq | Bneq ->
+        begin match (v1, v2) with
+          | MVconst (Cint i1), MVconst (Cint i2) ->
+            let res = match bin with
+              | Badd -> Cint (i1 + i2)
+              | Bsub -> Cint (i1 - i2)
+              | Bmul -> Cint (i1 * i2)
+              | Bdiv -> if i2 = 0 then raise (Division_by_zero e2.pos)
+                  else Cint (i1 / i2)
+              | Blt -> Cbool (i1 < i2)
+              | Ble -> Cbool (i1 <= i2)
+              | Bgt -> Cbool (i1 > i2)
+              | Bge -> Cbool (i1 >= i2)
+              | Beq -> Cbool (i1 == i2)
+              | Bneq -> Cbool (i1 != i2)
+              | _ -> failwith "never happens"
+            in MVconst res
+          | _ -> raise (Wrong_type p)
+        end
+      | Band | Bor ->
+        begin match (v1, v2) with
+          | MVconst (Cbool b1), MVconst (Cbool b2) ->
+              let res = match bin with
+                | Band -> b1 && b2
+                | Bor -> b1 || b2
+                | _ -> failwith "never happens"
+              in MVconst (Cbool res)
+          | _ -> raise (Wrong_type p)
+        end
+      | Bconc ->
+        begin match (v1, v2) with
+          | MVconst (Cstring s1), MVconst (Cstring s2) ->
+            MVconst (Cstring (String.concat "" [s1; s2]))
+          | _ -> raise (Wrong_type p)
+        end
+    in (mem, res)
   | _ -> failwith "Expression not implemented yet!"
 
 and e_stmt mem {psdesc = s; pos = p} = (* returns (memory, mvalue) *)
