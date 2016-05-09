@@ -8,6 +8,7 @@ exception Wrong_type of position
 exception Undeclared_variable of pident
 exception Undefined_field of pident
 exception Redefined_field of pident
+exception Assign_primitive of position
 
 exception Return of memory * mvalue (* for the PSreturn statement *)
 
@@ -152,6 +153,37 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
 and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
   match s with
   | PSexpr e -> e_expr mem e
+
+  (* if we're assigning a value that's not an object, copy it; otherwise,
+   * copy the location to the object *)
+  | PSassign(var, e) ->
+      begin match var with
+        | PDident {pid = "print"} -> raise (Assign_primitive p)
+        | PDident {pid = id} ->
+            (* if we're at toplevel, both mem.local and mem.closure are empty *)
+            let (mem, v) = e_expr mem e in
+            let loc, fresh = 
+              if Smap.mem id mem.local then
+                Smap.find id mem.local, false
+              else if Smap.mem id mem.closure then
+                Smap.find id mem.closure, false
+              else if Smap.mem id mem.global then
+                Smap.find id mem.global, false
+              else 
+                Location.fresh (), true in
+            let mem =
+              if fresh then
+                if !depth = 0 then (* toplevel *)
+                  {mem with global = (Smap.add id loc mem.global)}
+                else
+                  {mem with local = (Smap.add id loc mem.local)}
+              else mem in
+            begin
+            Hashtbl.replace vheap loc v;
+            (mem, MVconst Cunit)
+            end
+        | _ -> failwith "todo"
+      end
 
   | PScond(cond, s1, s2) ->
       let (mem, v) = e_expr mem cond in

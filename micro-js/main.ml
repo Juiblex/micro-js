@@ -81,4 +81,8 @@ let () =
         loc_p pid.pos;
         Printf.printf "Undefined field %s\n" pid.pid;
         exit 1
+    | Interp.Assign_primitive pos ->
+        loc_p pos;
+        print_string "Invalid primitive reassignment\n";
+        exit 1
 
