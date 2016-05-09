@@ -5,10 +5,11 @@ exception Not_a_function of position
 exception Not_an_object of position
 exception Division_by_zero of position
 exception Wrong_type of position
-exception Undeclared_variable of pident
+exception Undefined_variable of pident
 exception Undefined_field of pident
 exception Redefined_field of pident
 exception Assign_primitive of position
+exception Redefined_argument of pident
 
 exception Return of memory * mvalue (* for the PSreturn statement *)
 
@@ -54,10 +55,9 @@ let rec e_value mem = function (* doesn't modify the memory, just the heap *)
       let loc = Location.fresh () in
       Hashtbl.replace oheap loc fields;
       MVobj loc
-  (* the closure variables are the variable that were local at declaration *)
   | PVabs(args, body) ->
-      let args = List.map (fun {pid = id} -> id) args in
-      MVclos(mem.local, args, body)
+      let clos_vars = Smap.fold Smap.add mem.local mem.closure in
+      MVclos(clos_vars, args, body)
 
 and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
   match e with
@@ -74,7 +74,7 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
       else if Smap.mem id mem.global then
         Smap.find id mem.global
       else
-        raise (Undeclared_variable var) in
+        raise (Undefined_variable var) in
       (mem, Hashtbl.find vheap loc)
     | PDaccess(e, ({pid = id} as field)) ->
         let (mem, obj) = e_expr mem e in
@@ -103,7 +103,27 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
               print_newline ();
               (mem, MVconst Cunit)
         | MVclos(clos_vars, params, body) ->
-            failwith "Closures not implemented yet!"
+            let alloc_a a_locs ({pid = id} as arg, v) =
+              if Smap.mem id a_locs then
+                raise (Redefined_argument arg)
+              else
+              let loc = Location.fresh () in
+              Hashtbl.replace vheap loc v;
+              Smap.add id loc a_locs in
+            let args = try List.combine params args
+              with Invalid_argument _ ->
+                raise (Wrong_arity(1, List.length args, p)) in
+            let local = List.fold_left alloc_a Smap.empty args in
+            let mem_f = {global = mem.global; closure = clos_vars;
+              local = local} in
+            begin
+              incr depth;
+              let (mem_f, res) = try e_stmt mem_f body
+                with Return(m, r) -> (m, r) in
+              decr depth;
+              ({mem with global = mem_f.global}, res)
+            end
+            
         | _ -> raise (Not_a_function p)
       end
 
@@ -215,10 +235,12 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
         | _ -> raise (Wrong_type p) 
       end
 
+  | PSreturn e ->
+      let (mem, v) = e_expr mem e in raise (Return(mem, v))
+
   | PSblock stmts ->
       let lossy_eval mem s = let (m, v) = e_stmt mem s in m in
       (List.fold_left lossy_eval mem stmts, MVconst Cunit)
-  | _ -> failwith "Statement not implemented yet!"
 
 and e_prog {prog = s} =
   e_stmt {local = Smap.empty; closure = Smap.empty; global = Smap.empty} s;

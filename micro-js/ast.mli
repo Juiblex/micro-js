@@ -65,7 +65,7 @@ type ident = string
 type mvalue =
   | MVconst of const
   | MVobj of Location.t (* the location of the object in the object heap *)
-  | MVclos of store * (ident list) * pstmt (* closure vars * args * body *)
+  | MVclos of store * (pident list) * pstmt (* closure vars * args * body *)
 
 type mobject = store (* a memory object is really the store of its fields *)
 

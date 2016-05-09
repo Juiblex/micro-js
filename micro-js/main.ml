@@ -88,5 +88,13 @@ let () =
     | Interp.Not_an_object pos ->
         loc_p pos;
         print_string "This expression is not an object\n";
-        exit 1;
+        exit 1
+    | Interp.Undefined_variable pid ->
+        loc_p pid.pos;
+        Printf.printf "Undefined variable %s\n" pid.pid;
+        exit 1
+    | Interp.Redefined_argument pid ->
+        loc_p pid.pos;
+        Printf.printf "Redefined argument %s\n" pid.pid;
+        exit 1
 
