@@ -85,4 +85,8 @@ let () =
         loc_p pos;
         print_string "Invalid primitive reassignment\n";
         exit 1
+    | Interp.Not_an_object pos ->
+        loc_p pos;
+        print_string "This expression is not an object\n";
+        exit 1;
 

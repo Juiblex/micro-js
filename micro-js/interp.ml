@@ -182,7 +182,21 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
             Hashtbl.replace vheap loc v;
             (mem, MVconst Cunit)
             end
-        | _ -> failwith "todo"
+        | PDaccess(obj, {pid = id}) ->
+            let (mem, v) = e_expr mem obj in
+            begin match v with
+              | MVobj oloc ->
+                  let fields = Hashtbl.find oheap oloc in
+                  let (mem, v) = e_expr mem e in
+                  let floc = try Smap.find id fields
+                    with Not_found -> Location.fresh () in
+                  begin
+                    Hashtbl.replace vheap floc v;
+                    Hashtbl.replace oheap oloc (Smap.add id floc fields);
+                    (mem, MVconst Cunit)
+                  end
+              | _ -> raise (Not_an_object obj.pos)
+            end
       end
 
   | PScond(cond, s1, s2) ->
