@@ -75,13 +75,19 @@ and e_deref mem = function
       raise (Undefined_variable var) in
     (mem, Hashtbl.find vheap loc)
   | PDaccess(o, ({pid = id} as field)) ->
+      let rec find_field oloc = (* go up the prototype chain, return a mvalue *)
+        let fields = Hashtbl.find oheap oloc in
+        try Hashtbl.find vheap (Smap.find id fields)
+        with Not_found ->
+          if Smap.mem "__proto__" fields then
+            match Hashtbl.find vheap (Smap.find "__proto__" fields) with
+              | MVobj oloc -> find_field oloc
+              | _ -> raise (Undefined_field field)
+          else raise (Undefined_field field) in
+
       let (mem, obj) = e_expr mem o in
       match obj with
-        | MVobj oloc -> let fields = Hashtbl.find oheap oloc in
-          let floc = try Smap.find id fields
-            with Not_found -> raise (Undefined_field field) in
-          (mem, Hashtbl.find vheap floc)
-
+        | MVobj oloc -> (mem, find_field oloc)
         | _ -> raise (Not_an_object o.pos)
 
 and e_app mem ({pedesc = f; pos = p} as func) args =
