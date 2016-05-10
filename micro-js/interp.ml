@@ -22,6 +22,11 @@ let depth = ref 0 (* function call depth *)
 (* We need that to know whether to add new variables to the local or global 
    store *)
 
+(* the global object "this" maps to in "function" function calls *)
+(* "this" goes into mem.local, so it's a Location.t and not an mvalue! *)
+let glob_obj_loc = Location.fresh () 
+let glob_obj = MVobj glob_obj_loc (* the location of the store in the oheap *)
+
 let rec print = function
   | MVconst c -> begin match c with
     | Cint i -> print_int i
@@ -76,8 +81,8 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
       else
         raise (Undefined_variable var) in
       (mem, Hashtbl.find vheap loc)
-    | PDaccess(e, ({pid = id} as field)) ->
-        let (mem, obj) = e_expr mem e in
+    | PDaccess(o, ({pid = id} as field)) ->
+        let (mem, obj) = e_expr mem o in
         match obj with
           | MVobj oloc -> let fields = Hashtbl.find oheap oloc in
             let floc = try Smap.find id fields
@@ -88,11 +93,28 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
   end
   
   | PEapp(func, args) ->
-      let (mem, func) = e_expr mem func in
+      (* we want to : 
+        * - get the location l of the caller object in the oheap
+        * - create a variable "this" that has a fresh location l'
+        * - add Mobj l to the vheap at location l' *)
+
+      let (mem, func, this_loc) = match func.pedesc with
+        | PEderef (PDaccess(o, f)) ->
+          let (mem, obj) = e_expr mem o in
+          begin match obj with
+            | MVobj oloc -> let fields = Hashtbl.find oheap oloc in
+              let floc = try Smap.find f.pid fields
+                with Not_found -> raise (Undefined_field f) in
+              (mem, Hashtbl.find vheap floc, oloc)
+            | _ -> raise (Not_an_object o.pos)
+          end
+        | _ -> let (m, f) = e_expr mem func in (m, f, glob_obj_loc) in
+
       let rec e_args mem res = function
         | [] -> (mem, List.rev res)
         | a::args -> let (mem', v) = e_expr mem a in
           e_args mem' (v::res) args in
+
       let (mem, args) = e_args mem [] args in
       begin match func with
         | MVconst (Cstring "print") ->
@@ -114,6 +136,9 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
               with Invalid_argument _ ->
                 raise (Wrong_arity(1, List.length args, p)) in
             let local = List.fold_left alloc_a Smap.empty args in
+            let loc = Location.fresh () in
+            let local = Smap.add "this" loc local in
+            Hashtbl.add vheap loc (MVobj this_loc);
             let mem_f = {global = mem.global; closure = clos_vars;
               local = local} in
             begin
@@ -168,7 +193,6 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
           | _ -> raise (Wrong_type p)
         end
     in (mem, res)
-  | _ -> failwith "Expression not implemented yet!"
 
 and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
   match s with
@@ -243,4 +267,5 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
       (List.fold_left lossy_eval mem stmts, MVconst Cunit)
 
 and e_prog {prog = s} =
+  Hashtbl.add oheap glob_obj_loc Smap.empty; 
   e_stmt {local = Smap.empty; closure = Smap.empty; global = Smap.empty} s;

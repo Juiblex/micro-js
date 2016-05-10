@@ -72,7 +72,6 @@ let pprint {prog = s} =
           List.iter p_expr args;
       | PEbinop(b, e1, e2) -> Printf.printf "PEbinop: %s " (bin_to_str b);
           p_pos p; p_expr e1; p_expr e2;
-      | PEthis -> Printf.printf "PEthis "; p_pos p
     end;
     decr prof;
   and p_stmt {psdesc = s; pos = p} =

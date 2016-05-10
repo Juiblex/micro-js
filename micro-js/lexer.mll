@@ -12,7 +12,7 @@
 
   let kwd_tbl =
     ["if", IF; "else", ELSE; "while", WHILE; "function", FUNCTION;
-     "return", RETURN; "this", THIS; "true", CONST (Ast.Cbool true);
+     "return", RETURN; "true", CONST (Ast.Cbool true);
      "false", CONST (Ast.Cbool false)]
 
   let str_to_char = function
