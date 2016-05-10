@@ -83,6 +83,64 @@ and e_deref mem = function
           (mem, Hashtbl.find vheap floc)
 
         | _ -> raise (Not_an_object o.pos)
+
+and e_app mem ({pedesc = f; pos = p} as func )args =
+  (* we want to : 
+    * - get the location l of the caller object in the oheap
+    * - create a variable "this" that has a fresh location l'
+    * - add Mobj l to the vheap at location l' *)
+  let (mem, func, this_loc) = match f with
+    | PEderef (PDaccess(o, f)) ->
+      let (mem, obj) = e_expr mem o in
+      begin match obj with
+        | MVobj oloc -> let fields = Hashtbl.find oheap oloc in
+          let floc = try Smap.find f.pid fields
+            with Not_found -> raise (Undefined_field f) in
+          (mem, Hashtbl.find vheap floc, oloc)
+        | _ -> raise (Not_an_object o.pos)
+      end
+    | _ -> let (m, f) = e_expr mem func in (m, f, glob_obj_loc) in
+
+  let rec e_args mem res = function
+    | [] -> (mem, List.rev res)
+    | a::args -> let (mem', v) = e_expr mem a in
+      e_args mem' (v::res) args in
+
+  let (mem, args) = e_args mem [] args in
+  match func with
+    | MVconst (Cstring "print") ->
+        if List.length args <> 1 then
+          raise (Wrong_arity(1, List.length args, p))
+        else
+          print (List.hd args);
+          print_newline ();
+          (mem, MVconst Cunit)
+    | MVclos(clos_vars, params, body) ->
+        let alloc_a a_locs ({pid = id} as arg, v) =
+          if Smap.mem id a_locs then
+            raise (Redefined_argument arg)
+          else
+          let loc = Location.fresh () in
+          Hashtbl.replace vheap loc v;
+          Smap.add id loc a_locs in
+        let args = try List.combine params args
+          with Invalid_argument _ ->
+            raise (Wrong_arity(1, List.length args, p)) in
+        let local = List.fold_left alloc_a Smap.empty args in
+        let loc = Location.fresh () in
+        let local = Smap.add "this" loc local in
+        Hashtbl.add vheap loc (MVobj this_loc);
+        let mem_f = {global = mem.global; closure = clos_vars;
+          local = local} in
+        begin
+          incr depth;
+          let (mem_f, res) = try e_stmt mem_f body
+            with Return(m, r) -> (m, r) in
+          decr depth;
+          ({mem with global = mem_f.global}, res)
+        end
+        
+    | _ -> raise (Not_a_function p)
       
 and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
   match e with
@@ -91,65 +149,7 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
 
   | PEderef d -> e_deref mem d
   
-  | PEapp(func, args) ->
-      (* we want to : 
-        * - get the location l of the caller object in the oheap
-        * - create a variable "this" that has a fresh location l'
-        * - add Mobj l to the vheap at location l' *)
-
-      let (mem, func, this_loc) = match func.pedesc with
-        | PEderef (PDaccess(o, f)) ->
-          let (mem, obj) = e_expr mem o in
-          begin match obj with
-            | MVobj oloc -> let fields = Hashtbl.find oheap oloc in
-              let floc = try Smap.find f.pid fields
-                with Not_found -> raise (Undefined_field f) in
-              (mem, Hashtbl.find vheap floc, oloc)
-            | _ -> raise (Not_an_object o.pos)
-          end
-        | _ -> let (m, f) = e_expr mem func in (m, f, glob_obj_loc) in
-
-      let rec e_args mem res = function
-        | [] -> (mem, List.rev res)
-        | a::args -> let (mem', v) = e_expr mem a in
-          e_args mem' (v::res) args in
-
-      let (mem, args) = e_args mem [] args in
-      begin match func with
-        | MVconst (Cstring "print") ->
-            if List.length args <> 1 then
-              raise (Wrong_arity(1, List.length args, p))
-            else
-              print (List.hd args);
-              print_newline ();
-              (mem, MVconst Cunit)
-        | MVclos(clos_vars, params, body) ->
-            let alloc_a a_locs ({pid = id} as arg, v) =
-              if Smap.mem id a_locs then
-                raise (Redefined_argument arg)
-              else
-              let loc = Location.fresh () in
-              Hashtbl.replace vheap loc v;
-              Smap.add id loc a_locs in
-            let args = try List.combine params args
-              with Invalid_argument _ ->
-                raise (Wrong_arity(1, List.length args, p)) in
-            let local = List.fold_left alloc_a Smap.empty args in
-            let loc = Location.fresh () in
-            let local = Smap.add "this" loc local in
-            Hashtbl.add vheap loc (MVobj this_loc);
-            let mem_f = {global = mem.global; closure = clos_vars;
-              local = local} in
-            begin
-              incr depth;
-              let (mem_f, res) = try e_stmt mem_f body
-                with Return(m, r) -> (m, r) in
-              decr depth;
-              ({mem with global = mem_f.global}, res)
-            end
-            
-        | _ -> raise (Not_a_function p)
-      end
+  | PEapp(func, args) -> e_app mem func args
 
   | PEbinop(bin, e1, e2) ->
     let (mem, v1) = e_expr mem e1 in
@@ -197,8 +197,6 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
   match s with
   | PSexpr e -> e_expr mem e
 
-  (* if we're assigning a value that's not an object, copy it; otherwise,
-   * copy the location to the object *)
   | PSassign(var, e) ->
       begin match var with
         | PDident {pid = "print"} -> raise (Assign_primitive p)
