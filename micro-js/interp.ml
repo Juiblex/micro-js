@@ -87,7 +87,7 @@ and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
               with Not_found -> raise (Undefined_field field) in
             (mem, Hashtbl.find vheap floc)
 
-          | _ -> raise (Not_an_object p)
+          | _ -> raise (Not_an_object o.pos)
   end
   
   | PEapp(func, args) ->
