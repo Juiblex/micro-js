@@ -38,7 +38,7 @@ let space = ' ' | '\t'
 let letter = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let integer = digit+
-let ident = letter (letter | '_' | digit)*
+let ident = (letter | '_') (letter | '_' | digit)*
 let car = [' ' '!' '#'-'[' ']'-'~'] | "\\\\" | "\\\"" | "\\n" | "\tt"
 
 rule token = parse
