@@ -62,33 +62,34 @@ let rec e_value mem = function
       let clos_vars = Smap.fold Smap.add mem.local mem.closure in
       (mem, MVclos(clos_vars, args, body))
 
+and e_deref mem = function
+  | PDident {pid = "print"} -> (mem, MVconst (Cstring "print"))
+  | PDident ({pid = id} as var) -> let loc =
+    if Smap.mem id mem.local then
+      Smap.find id mem.local
+    else if Smap.mem id mem.closure then
+      Smap.find id mem.closure
+    else if Smap.mem id mem.global then
+      Smap.find id mem.global
+    else
+      raise (Undefined_variable var) in
+    (mem, Hashtbl.find vheap loc)
+  | PDaccess(o, ({pid = id} as field)) ->
+      let (mem, obj) = e_expr mem o in
+      match obj with
+        | MVobj oloc -> let fields = Hashtbl.find oheap oloc in
+          let floc = try Smap.find id fields
+            with Not_found -> raise (Undefined_field field) in
+          (mem, Hashtbl.find vheap floc)
+
+        | _ -> raise (Not_an_object o.pos)
+      
 and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
   match e with
   
   | PEvalue v -> e_value mem v
 
-  | PEderef d -> begin match d with
-    | PDident {pid = "print"} -> (mem, MVconst (Cstring "print"))
-    | PDident ({pid = id} as var) -> let loc =
-      if Smap.mem id mem.local then
-        Smap.find id mem.local
-      else if Smap.mem id mem.closure then
-        Smap.find id mem.closure
-      else if Smap.mem id mem.global then
-        Smap.find id mem.global
-      else
-        raise (Undefined_variable var) in
-      (mem, Hashtbl.find vheap loc)
-    | PDaccess(o, ({pid = id} as field)) ->
-        let (mem, obj) = e_expr mem o in
-        match obj with
-          | MVobj oloc -> let fields = Hashtbl.find oheap oloc in
-            let floc = try Smap.find id fields
-              with Not_found -> raise (Undefined_field field) in
-            (mem, Hashtbl.find vheap floc)
-
-          | _ -> raise (Not_an_object o.pos)
-  end
+  | PEderef d -> e_deref mem d
   
   | PEapp(func, args) ->
       (* we want to : 
