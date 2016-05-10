@@ -46,7 +46,7 @@ let pprint {prog = s} =
     begin match v with
       | PVconst c -> print_string "PVconst "; p_const c
       | PVobj l -> print_string "PVobj\n"; incr prof;
-          List.iter (fun (i, v) -> hyphens !prof; p_ident i; p_value v) l;
+          List.iter (fun (i, v) -> hyphens !prof; p_ident i; p_expr v) l;
           decr prof;
       | PVabs(ids, s) -> print_string "PVabs\n"; incr prof;
           List.iter (fun i -> hyphens !prof; p_ident i) ids;

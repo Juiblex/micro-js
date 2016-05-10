@@ -43,31 +43,29 @@ let rec print = function
       print_string "["; Smap.iter print_field fields; print_string "\b\b]"
   | MVclos(_, _, _) -> print_string "function"
 
-(* if we switch object fields to expressions, then that will modify
-   the memory *)
-let rec e_value mem = function (* doesn't modify the memory, just the heap *)
-  | PVconst c -> MVconst c
+let rec e_value mem = function
+  | PVconst c -> (mem, MVconst c)
   | PVobj fields ->
-      let alloc_f f_locs ({pid = id} as var, value) =
+      let alloc_f (mem, f_locs) ({pid = id} as var, value) =
         if Smap.mem id f_locs then
           raise (Redefined_field var)
         else
         let loc = Location.fresh () in
-        let v = e_value mem value in
+        let (mem, v) = e_expr mem value in
         Hashtbl.replace vheap loc v;
-        Smap.add id loc f_locs in
-      let fields = List.fold_left alloc_f Smap.empty fields in
+        (mem, Smap.add id loc f_locs) in
+      let (mem, fields) = List.fold_left alloc_f (mem, Smap.empty) fields in
       let loc = Location.fresh () in
       Hashtbl.replace oheap loc fields;
-      MVobj loc
+      (mem, MVobj loc)
   | PVabs(args, body) ->
       let clos_vars = Smap.fold Smap.add mem.local mem.closure in
-      MVclos(clos_vars, args, body)
+      (mem, MVclos(clos_vars, args, body))
 
 and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
   match e with
   
-  | PEvalue v -> (mem, e_value mem v)
+  | PEvalue v -> e_value mem v
 
   | PEderef d -> begin match d with
     | PDident {pid = "print"} -> (mem, MVconst (Cstring "print"))

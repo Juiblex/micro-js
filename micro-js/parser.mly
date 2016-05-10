@@ -84,7 +84,7 @@ stmt:
 ;
 
 fdecl:
-  | i = IDENT COLON v = value { (i, v) }
+  | i = IDENT COLON e = expr { (i, e) }
 ;
 
 value:
