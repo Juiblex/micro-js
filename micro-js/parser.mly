@@ -79,8 +79,8 @@ stmt:
   | RETURN e = expr? SEMICOLON {
     let e = match e with
       | Some pexp -> pexp
-      | None -> {pedesc = PEvalue (PVconst Cunit); pos = loc $endpos $endpos} in
-    {psdesc = PSreturn e; pos = loc $startpos $endpos} }
+      | None -> {pedesc = PEvalue (PVconst Cunit); pos = loc $endpos $endpos}
+    in {psdesc = PSreturn e; pos = loc $startpos $endpos} }
 ;
 
 fdecl:

@@ -19,12 +19,12 @@ let (vheap : (Location.t, mvalue) Hashtbl.t) = Hashtbl.create 17
 let (oheap : (Location.t, mobject) Hashtbl.t) = Hashtbl.create 17
 
 let depth = ref 0 (* function call depth *)
-(* We need that to know whether to add new variables to the local or global 
+(* We need that to know whether to add new variables to the local or global
    store *)
 
 (* the global object "this" maps to in "function" function calls *)
 (* "this" goes into mem.local, so it's a Location.t and not an mvalue! *)
-let glob_obj_loc = Location.fresh () 
+let glob_obj_loc = Location.fresh ()
 let glob_obj = MVobj glob_obj_loc (* the location of the store in the oheap *)
 
 let rec print = function
@@ -84,8 +84,8 @@ and e_deref mem = function
 
         | _ -> raise (Not_an_object o.pos)
 
-and e_app mem ({pedesc = f; pos = p} as func )args =
-  (* we want to : 
+and e_app mem ({pedesc = f; pos = p} as func) args =
+  (* we want to :
     * - get the location l of the caller object in the oheap
     * - create a variable "this" that has a fresh location l'
     * - add Mobj l to the vheap at location l' *)
@@ -139,16 +139,16 @@ and e_app mem ({pedesc = f; pos = p} as func )args =
           decr depth;
           ({mem with global = mem_f.global}, res)
         end
-        
+
     | _ -> raise (Not_a_function p)
-      
+
 and e_expr mem {pedesc = e; pos = p} = (* returns (memory, mvalue) *)
   match e with
-  
+
   | PEvalue v -> e_value mem v
 
   | PEderef d -> e_deref mem d
-  
+
   | PEapp(func, args) -> e_app mem func args
 
   | PEbinop(bin, e1, e2) ->
@@ -203,14 +203,14 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
         | PDident {pid = id} ->
             (* if we're at toplevel, both mem.local and mem.closure are empty *)
             let (mem, v) = e_expr mem e in
-            let loc, fresh = 
+            let loc, fresh =
               if Smap.mem id mem.local then
                 Smap.find id mem.local, false
               else if Smap.mem id mem.closure then
                 Smap.find id mem.closure, false
               else if Smap.mem id mem.global then
                 Smap.find id mem.global, false
-              else 
+              else
                 Location.fresh (), true in
             let mem =
               if fresh then
@@ -245,7 +245,7 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
       begin match v with
         | MVconst (Cbool true) -> e_stmt mem s1
         | MVconst (Cbool false) -> e_stmt mem s2
-        | _ -> raise (Wrong_type p) 
+        | _ -> raise (Wrong_type p)
       end
 
   | PSloop(cond, s) ->
@@ -253,7 +253,7 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
       begin match v with
         | MVconst (Cbool true) -> let (mem, _) = e_stmt mem s in e_stmt mem stm
         | MVconst (Cbool false) -> (mem, MVconst Cunit)
-        | _ -> raise (Wrong_type p) 
+        | _ -> raise (Wrong_type p)
       end
 
   | PSreturn e ->
@@ -264,5 +264,5 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
       (List.fold_left lossy_eval mem stmts, MVconst Cunit)
 
 and e_prog {prog = s} =
-  Hashtbl.add oheap glob_obj_loc Smap.empty; 
+  Hashtbl.add oheap glob_obj_loc Smap.empty;
   e_stmt {local = Smap.empty; closure = Smap.empty; global = Smap.empty} s;

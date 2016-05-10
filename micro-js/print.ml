@@ -31,9 +31,9 @@ let p_pos p =
   else
     Printf.printf "line %d:%d - line %d:%d\n" p.slin p.scol p.elin p.ecol
 
-let pprint {prog = s} = 
+let pprint {prog = s} =
   let prof = ref 0 in
-  let rec p_const c = 
+  let rec p_const c =
     begin match c with
       | Cint i -> Printf.printf "Cint %d" i
       | Cbool b -> Printf.printf "Cbool %s" (bool_to_str b)

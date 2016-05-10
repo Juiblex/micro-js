@@ -57,7 +57,8 @@ and psdesc =
 
 type pprogram = {prog: pstmt}
 
-type store = Location.t Map.Make(String).t (* a store maps variables to heap locations *)
+(* a store maps variables to heap locations *)
+type store = Location.t Map.Make(String).t
 
 type ident = string
 
