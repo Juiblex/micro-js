@@ -293,8 +293,12 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
             let loc = Location.fresh () in
             let mem = {mem with local = (Smap.add id.pid loc mem.local)} in
             let eval_step str _ (mem, _) =
-              Hashtbl.replace vheap loc (MVconst (Cstring str));
-              e_stmt mem s in
+              if str <> "__proto__" then
+                begin
+                  Hashtbl.replace vheap loc (MVconst (Cstring str));
+                  e_stmt mem s
+                end
+              else (mem, MVconst Cunit) in
             Smap.fold eval_step (Hashtbl.find oheap oloc) (mem, MVconst Cunit)
         | _ -> raise (Not_an_object obj.pos)
       end
