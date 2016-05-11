@@ -144,7 +144,7 @@ and e_app mem ({pedesc = f; pos = p} as func) args =
           Smap.add id loc a_locs in
         let args = try List.combine params args
           with Invalid_argument _ ->
-            raise (Wrong_arity(1, List.length args, p)) in
+            raise (Wrong_arity(List.length params, List.length args, p)) in
         let local = List.fold_left alloc_a Smap.empty args in
         let loc = Location.fresh () in
         let local = Smap.add "this" loc local in
@@ -283,6 +283,20 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
         | MVconst (Cbool true) -> let (mem, _) = e_stmt mem s in e_stmt mem stm
         | MVconst (Cbool false) -> (mem, MVconst Cunit)
         | _ -> raise (Wrong_type p)
+      end
+
+  | PSenum(id, obj, s) ->
+      let (mem, o) = e_expr mem obj in
+      begin match o with
+        | MVobj oloc ->
+            (* we don't care whether id was defined before *)
+            let loc = Location.fresh () in
+            let mem = {mem with local = (Smap.add id.pid loc mem.local)} in
+            let eval_step str _ (mem, _) =
+              Hashtbl.replace vheap loc (MVconst (Cstring str));
+              e_stmt mem s in
+            Smap.fold eval_step (Hashtbl.find oheap oloc) (mem, MVconst Cunit)
+        | _ -> raise (Not_an_object obj.pos)
       end
 
   | PSreturn e ->

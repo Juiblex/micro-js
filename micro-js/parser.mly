@@ -18,6 +18,7 @@
 %token ASSIGN DOT
 %token IF ELSE
 %token WHILE
+%token FOR IN
 %token FUNCTION RETURN
 
 %left OR
@@ -63,6 +64,8 @@ stmt0: (* outside a function statement *)
   | WHILE LP e = expr RP b = block0
     { {psdesc = PSloop(e, b); pos = loc $startpos $endpos} }
 
+  | FOR LP i = IDENT IN e = expr RP b = block0
+    { {psdesc = PSenum(i, e, b); pos = loc $startpos $endpos} }
 ;
 
 stmt:
@@ -76,6 +79,9 @@ stmt:
 
   | WHILE LP e = expr RP b = block
     { {psdesc = PSloop(e, b); pos = loc $startpos $endpos} }
+
+  | FOR LP i = IDENT IN e = expr RP b = block
+    { {psdesc = PSenum(i, e, b); pos = loc $startpos $endpos} }
 
   | RETURN e = expr? SEMICOLON {
     let e = match e with
