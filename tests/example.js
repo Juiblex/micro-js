@@ -9,8 +9,8 @@ var Foo = function() {
 	this.foo = 42;
 }
 
-var Bar = {
-	bar: function() {
+var PBar = {
+	ba: function() {
 		return this._bar;
 	},
 	setBar: function(b) {
@@ -18,7 +18,7 @@ var Bar = {
 	}
 };
 
-extend(Foo.prototype, Bar);
+extend(Foo.prototype, PBar);
 
 var foo = new Foo();
 console.log(foo.bar()); // undefined

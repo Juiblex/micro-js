@@ -1,9 +1,10 @@
-x = [f: function() {
+x = [foo:0];
+x.f =  function() {
 	this.foo = this.foo + 1;
-}, foo:0];
+};
 
-while (x.foo != 100) {
+while (x.foo != 10) {
 	x.f();
+	print(x.foo);
 }
 
-print(x.foo);
