@@ -97,4 +97,8 @@ let () =
         loc_p pid.pos;
         Printf.printf "Redefined argument %s\n" pid.pid;
         exit 1
+    | Interp.Not_a_string pos ->
+        loc_p pos;
+        Printf.printf "This expression is not a string\n";
+        exit 1
 

@@ -30,6 +30,7 @@ type pvalue =
 and pderef =
   | PDident of pident
   | PDaccess of pexpr * pident
+  | PDrefl of pexpr * pexpr (* o["field"] *)
 
 and pexpr = {
   pedesc: pedesc;

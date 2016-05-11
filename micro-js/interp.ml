@@ -3,13 +3,14 @@ open Ast
 exception Wrong_arity of int * int * position (* expected, actual *)
 exception Not_a_function of position
 exception Not_an_object of position
+exception Not_a_string of position
 exception Division_by_zero of position
 exception Wrong_type of position
 exception Undefined_variable of pident
 exception Undefined_field of pident
 exception Redefined_field of pident
-exception Assign_primitive of position
 exception Redefined_argument of pident
+exception Assign_primitive of position
 
 exception Return of memory * mvalue (* for the PSreturn statement *)
 
@@ -62,33 +63,45 @@ let rec e_value mem = function
       let clos_vars = Smap.fold Smap.add mem.local mem.closure in
       (mem, MVclos(clos_vars, args, body))
 
-and e_deref mem = function
-  | PDident {pid = "print"} -> (mem, MVconst (Cstring "print"))
-  | PDident ({pid = id} as var) -> let loc =
-    if Smap.mem id mem.local then
-      Smap.find id mem.local
-    else if Smap.mem id mem.closure then
-      Smap.find id mem.closure
-    else if Smap.mem id mem.global then
-      Smap.find id mem.global
-    else
-      raise (Undefined_variable var) in
-    (mem, Hashtbl.find vheap loc)
-  | PDaccess(o, ({pid = id} as field)) ->
-      let rec find_field oloc = (* go up the prototype chain, return a mvalue *)
-        let fields = Hashtbl.find oheap oloc in
-        try Hashtbl.find vheap (Smap.find id fields)
-        with Not_found ->
-          if Smap.mem "__proto__" fields then
-            match Hashtbl.find vheap (Smap.find "__proto__" fields) with
-              | MVobj oloc -> find_field oloc
-              | _ -> raise (Undefined_field field)
-          else raise (Undefined_field field) in
-
-      let (mem, obj) = e_expr mem o in
-      match obj with
-        | MVobj oloc -> (mem, find_field oloc)
-        | _ -> raise (Not_an_object o.pos)
+and e_deref mem d =
+  let rec find_field oloc field = (* go up the prototype chain, return a mvalue *)
+    let fields = Hashtbl.find oheap oloc in
+    try Hashtbl.find vheap (Smap.find field.pid fields)
+    with Not_found ->
+      if Smap.mem "__proto__" fields then
+        match Hashtbl.find vheap (Smap.find "__proto__" fields) with
+          | MVobj oloc -> find_field oloc field
+          | _ -> raise (Undefined_field field)
+      else raise (Undefined_field field) in
+  match d with
+    | PDident {pid = "print"} -> (mem, MVconst (Cstring "print"))
+    | PDident ({pid = id} as var) -> let loc =
+      if Smap.mem id mem.local then
+        Smap.find id mem.local
+      else if Smap.mem id mem.closure then
+        Smap.find id mem.closure
+      else if Smap.mem id mem.global then
+        Smap.find id mem.global
+      else
+        raise (Undefined_variable var) in
+      (mem, Hashtbl.find vheap loc)
+    | PDaccess(o, field) ->
+        let (mem, obj) = e_expr mem o in
+        begin match obj with
+          | MVobj oloc -> (mem, find_field oloc field)
+          | _ -> raise (Not_an_object o.pos)
+        end
+    | PDrefl(o, f) ->
+        let (mem, obj) = e_expr mem o in
+        match obj with
+          | MVobj oloc ->
+              let (mem, field) = e_expr mem f in
+              begin match field with
+                | MVconst (Cstring s) -> (mem, find_field oloc
+                                          {pid = s; pos = f.pos})
+                | _ -> raise (Not_a_string f.pos)
+              end
+          | _ -> raise (Not_an_object o.pos)
 
 and e_app mem ({pedesc = f; pos = p} as func) args =
   (* we want to :
@@ -204,6 +217,16 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
   | PSexpr e -> e_expr mem e
 
   | PSassign(var, e) ->
+      let assign oloc id = (* for PDaccess and PDrefl *)
+        let fields = Hashtbl.find oheap oloc in
+        let (mem, v) = e_expr mem e in
+        let floc = try Smap.find id fields
+          with Not_found -> Location.fresh () in
+        begin
+          Hashtbl.replace vheap floc v;
+          Hashtbl.replace oheap oloc (Smap.add id floc fields);
+          (mem, MVconst Cunit)
+        end in
       begin match var with
         | PDident {pid = "print"} -> raise (Assign_primitive p)
         | PDident {pid = id} ->
@@ -232,18 +255,18 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
         | PDaccess(obj, {pid = id}) ->
             let (mem, v) = e_expr mem obj in
             begin match v with
-              | MVobj oloc ->
-                  let fields = Hashtbl.find oheap oloc in
-                  let (mem, v) = e_expr mem e in
-                  let floc = try Smap.find id fields
-                    with Not_found -> Location.fresh () in
-                  begin
-                    Hashtbl.replace vheap floc v;
-                    Hashtbl.replace oheap oloc (Smap.add id floc fields);
-                    (mem, MVconst Cunit)
-                  end
+              | MVobj oloc -> assign oloc id
               | _ -> raise (Not_an_object obj.pos)
             end
+        | PDrefl(o, f) ->
+            let (mem, obj) = e_expr mem o in
+            match obj with
+              | MVobj oloc -> let (mem, field) = e_expr mem f in
+                  begin match field with
+                    | MVconst (Cstring id) -> assign oloc id
+                    | _ -> raise (Not_a_string f.pos)
+                  end
+              | _ -> raise (Not_an_object o.pos)
       end
 
   | PScond(cond, s1, s2) ->

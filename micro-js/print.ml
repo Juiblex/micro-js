@@ -59,8 +59,9 @@ let pprint {prog = s} =
     begin match d with
       | PDident i -> print_string "PDident "; p_ident i
       | PDaccess(e, i) -> print_string "PDaccess\n"; p_expr e;
-        hyphens !prof;
-        p_ident i;
+          hyphens !prof;
+          p_ident i;
+      | PDrefl(e, f) -> print_string "PDrefl\n"; p_expr e; p_expr f
     end;
   and p_expr {pedesc = e; pos = p} =
     hyphens !prof;

@@ -28,6 +28,7 @@
 %left TIMES DIV
 %left DOT
 %right LP (* for stuff like e1 && e2(x) that is really e1 && (e2(x)) *)
+%right LSB (* e1 && e2["x"] is e1 && z2["x"] *)
 
 %start prog
 
@@ -97,6 +98,7 @@ value:
 deref:
   | i = IDENT { PDident i }
   | e = expr DOT i = IDENT { PDaccess(e, i) }
+  | e = expr LSB f = expr RSB { PDrefl(e, f) }
 ;
 
 expr:
