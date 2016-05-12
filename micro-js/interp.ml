@@ -63,16 +63,17 @@ let rec e_value mem = function
       let clos_vars = Smap.fold Smap.add mem.local mem.closure in
       (mem, MVclos(clos_vars, args, body))
 
+and find_field oloc field = (* go up the prototype chain, return a mvalue *)
+  let fields = Hashtbl.find oheap oloc in
+  try Hashtbl.find vheap (Smap.find field.pid fields)
+  with Not_found ->
+    if Smap.mem "__proto__" fields then
+      match Hashtbl.find vheap (Smap.find "__proto__" fields) with
+        | MVobj oloc -> find_field oloc field
+        | _ -> raise (Undefined_field field)
+    else raise (Undefined_field field)
+
 and e_deref mem d =
-  let rec find_field oloc field = (* go up the prototype chain, return a mvalue *)
-    let fields = Hashtbl.find oheap oloc in
-    try Hashtbl.find vheap (Smap.find field.pid fields)
-    with Not_found ->
-      if Smap.mem "__proto__" fields then
-        match Hashtbl.find vheap (Smap.find "__proto__" fields) with
-          | MVobj oloc -> find_field oloc field
-          | _ -> raise (Undefined_field field)
-      else raise (Undefined_field field) in
   match d with
     | PDident {pid = "print"} -> (mem, MVconst (Cstring "print"))
     | PDident ({pid = id} as var) -> let loc =
@@ -112,10 +113,7 @@ and e_app mem ({pedesc = f; pos = p} as func) args =
     | PEderef (PDaccess(o, f)) ->
       let (mem, obj) = e_expr mem o in
       begin match obj with
-        | MVobj oloc -> let fields = Hashtbl.find oheap oloc in
-          let floc = try Smap.find f.pid fields
-            with Not_found -> raise (Undefined_field f) in
-          (mem, Hashtbl.find vheap floc, oloc)
+        | MVobj oloc -> (mem, find_field oloc f, oloc)
         | _ -> raise (Not_an_object o.pos)
       end
     | _ -> let (m, f) = e_expr mem func in (m, f, glob_obj_loc) in

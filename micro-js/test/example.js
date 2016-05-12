@@ -1,8 +1,17 @@
-Foo = function() {
-	this.foo = 42;
+extend = function(X, Y) {
+	for (y in Y) {
+		X[y] = Y[y];
+	}
 };
 
-Bar = [
+PFoo = [test:0];
+
+Foo = function() {
+	this.foo = 42;
+	this.__proto__ = PFoo;
+};
+
+PBar = [
 	bar: function() {
 		return this._bar;
 	},
@@ -11,12 +20,16 @@ Bar = [
 	}
 ];
 
+extend(PFoo, PBar);
+
 foo = [init: Foo];
 
 foo.init();
 
-foo.bar = Bar.bar;
-foo.setBar = Bar.setBar;
+//print(foo);
+//print(PFoo);
+//print(PBar);
+
 
 //print(foo.bar()); raises Undefined field : _bar
 foo.setBar("hello");
