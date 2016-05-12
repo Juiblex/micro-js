@@ -4,7 +4,7 @@ extend = function(X, Y) {
 	}
 };
 
-PFoo = [test:0];
+PFoo = [];
 
 Foo = function() {
 	this.foo = 42;
@@ -12,6 +12,7 @@ Foo = function() {
 };
 
 PBar = [
+	_bar: 0,
 	bar: function() {
 		return this._bar;
 	},
@@ -22,15 +23,9 @@ PBar = [
 
 extend(PFoo, PBar);
 
-foo = [init: Foo];
-
+foo = [init: Foo]; // instead of new Foo()
 foo.init();
 
-//print(foo);
-//print(PFoo);
-//print(PBar);
-
-
-//print(foo.bar()); raises Undefined field : _bar
+print(foo.bar());
 foo.setBar("hello");
 print(foo.bar()); // works
