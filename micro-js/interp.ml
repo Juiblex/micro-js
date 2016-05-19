@@ -41,7 +41,8 @@ let rec print = function
         print (Hashtbl.find vheap l);
         print_string "; "  in
       let fields = Hashtbl.find oheap loc in
-      print_string "["; Smap.iter print_field fields; print_string "\b\b]"
+      print_string "["; Smap.iter print_field fields;
+      print_string (if Smap.is_empty fields then "]" else "\b\b]");
   | MVclos(_, _, _) -> print_string "function"
 
 let rec e_value mem = function
