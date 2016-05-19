@@ -13,7 +13,7 @@
   let kwd_tbl =
     ["if", IF; "else", ELSE; "while", WHILE; "function", FUNCTION;
      "return", RETURN; "for", FOR; "in", IN; "true", CONST (Ast.Cbool true);
-     "false", CONST (Ast.Cbool false)]
+     "delete", DELETE; "false", CONST (Ast.Cbool false)]
 
   let str_to_char = function
     | "\\\\" -> '\\'

@@ -16,6 +16,7 @@
 %token GRE GRT LEE LET EQ NEQ AND OR
 %token LP RP LCB RCB LSB RSB COMMA SEMICOLON COLON
 %token ASSIGN DOT
+%token DELETE
 %token IF ELSE
 %token WHILE
 %token FOR IN
@@ -52,11 +53,20 @@ block:
     { {psdesc = PSblock stmts; pos = loc $startpos $endpos} }
 ;
 
-stmt0: (* outside a function statement *)
+(* simple statement that doesn't require knowing whether we're inside a *
+ * function                                                             *)
+sstmt:
   | e = expr SEMICOLON { {psdesc = PSexpr e; pos = loc $startpos $endpos} }
 
   | d = deref ASSIGN e = expr SEMICOLON
     { {psdesc = PSassign(d, e); pos = loc $startpos $endpos} }
+
+  | DELETE d = deref SEMICOLON
+    { {psdesc = PSdelete d; pos = loc $startpos $endpos} }
+;
+
+stmt0: (* outside a function declaration *)
+  | s = sstmt { s }
 
   | IF LP e = expr RP b1 = block0 ELSE b2 = block0
     { {psdesc = PScond(e, b1, b2); pos = loc $startpos $endpos} }
@@ -69,10 +79,7 @@ stmt0: (* outside a function statement *)
 ;
 
 stmt:
-  | e = expr SEMICOLON { {psdesc = PSexpr e; pos = loc $startpos $endpos} }
-
-  | d = deref ASSIGN e = expr SEMICOLON
-    { {psdesc = PSassign(d, e); pos = loc $startpos $endpos} }
+  | s = sstmt { s }
 
   | IF LP e = expr RP b1 = block ELSE b2 = block
     { {psdesc = PScond(e, b1, b2); pos = loc $startpos $endpos} }

@@ -86,6 +86,7 @@ let pprint {prog = s} =
       | PSloop(e, s) -> print_string "PSloop "; p_pos p; p_expr e; p_stmt s
       | PSenum(i, e, s) -> print_string "PSenum "; p_pos p; p_deref (PDident i);
           p_expr e; p_stmt s
+      | PSdelete d -> print_string "PSdelete "; p_pos p; p_deref d
       | PSreturn e -> print_string "PSreturn "; p_pos p; p_expr e
       | PSblock l -> print_string "PSblock "; p_pos p; List.iter p_stmt l
     end;

@@ -1,41 +1,39 @@
-PCar = [];
+/* init code */
+PCar = []; //
 
-newCar = function() {
+newCar = function() { // f1
+	/* init code */
 	this.name = "";
 	this.speed = 0;
 	this.price = 0;
 	this.__proto__ = PCar;
+	/* end init */
 };
 
-PCar.setName = function(name) {
+PCar.setName = function(name) { // f2
+	// not init code because we're inside a function now
 	this.name = name;
 	return this;
 };
 
-PCar.setSpeed = function(speed) {
+PCar.setSpeed = function(speed) { // f3
 	this.speed = speed;
 	return this;
 };
 
-PCar.setPrice = function(price) {
+PCar.setPrice = function(price) { // f4
 	this.price = price;
-	if (true) {
-		return this;
-	} else {
-		return [];
-	}
+	return this;
 };
 
-PCar.print = function() {
+PCar.print = function() { // f5
 	print(this.name);
 	print(this.speed);
 	print(this.price);
 };
+/* end init */
 
-myCar = [init: newCar];
+myCar = [init: newCar]; // should be just myCar = new newCar();
 myCar.init();
 
-// You could have a relationship between the fields of an object
-// that is lost and restored though the chained calls
-// like f(speed, price) = 0
 myCar.setName("myCar").setSpeed(150).setPrice(30000).print();

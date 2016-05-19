@@ -301,6 +301,33 @@ and e_stmt mem ({psdesc = s; pos = p} as stm) = (* returns (memory, mvalue) *)
         | _ -> raise (Not_an_object obj.pos)
       end
 
+  | PSdelete d ->
+      let remove oloc id =
+        begin
+          Hashtbl.replace oheap oloc
+            (Smap.remove id (Hashtbl.find oheap oloc));
+          MVconst (Cbool true)
+        end in
+      begin match d with
+        | PDident i -> (mem, MVconst Cunit) (* does nothing *)
+        | PDaccess(obj, {pid = id}) ->
+            let (mem, v) = e_expr mem obj in
+            begin match v with
+              | MVobj oloc -> (mem, remove oloc id)
+              | _ -> raise (Not_an_object obj.pos)
+            end
+        | PDrefl(o, f) ->
+            let (mem, obj) = e_expr mem o in
+            match obj with
+              | MVobj oloc ->
+                  let (mem, field) = e_expr mem f in
+                  begin match field with
+                    | MVconst (Cstring id) -> (mem, remove oloc id)
+                    | _ -> raise (Not_a_string f.pos)
+                  end
+              | _ -> raise (Not_an_object o.pos)
+      end
+
   | PSreturn e ->
       let (mem, v) = e_expr mem e in raise (Return(mem, v))
 

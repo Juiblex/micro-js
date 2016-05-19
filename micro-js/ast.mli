@@ -54,6 +54,7 @@ and psdesc =
   | PScond of pexpr * pstmt * pstmt
   | PSloop of pexpr * pstmt
   | PSenum of pident * pexpr * pstmt (* for (field in obj) { stuff } *)
+  | PSdelete of pderef
   | PSreturn of pexpr
   | PSblock of pstmt list
 
