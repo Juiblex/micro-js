@@ -12,7 +12,6 @@ Foo = function() {
 };
 
 PBar = [
-	_bar: 0,
 	bar: function() {
 		return this._bar;
 	},

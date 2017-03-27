@@ -32,7 +32,7 @@ let rec print = function
   | MVconst c -> begin match c with
     | Cint i -> print_int i
     | Cbool b -> print_string (if b then "true" else "false")
-    | Cstring s -> print_string s
+    | Cstring s -> Printf.printf "\"%s\"" (String.escaped s)
     | Cunit -> print_string "()"
     end
   | MVobj loc ->

@@ -17,16 +17,10 @@ Car.prototype.setSpeed = function(speed) { // app code
 	return this;
 };
 
-Car.prototype.setPrice = function(price) { // app code
-	this.price = price;
-	return this;
-};
-
 /* this:{name:any, speed:any, price:any} -> null */
 Car.prototype.print = function() { // app code
 	console.log(this.name);
 	console.log(this.speed);
-	console.log(this.price);
 };
 
 /* A call to "new" creates a new object in the symbolic heap, and runs the	*
@@ -35,7 +29,7 @@ Car.prototype.print = function() { // app code
  * Here, the myCar object gets type {name:string, speed:int, price:int}			*
  * with the refinement that its prototype is "Car.prototype".								*/
 
-/* type of myCar: {name:string, speed:int, price:int} | Car.prototype */
+/* type of myCar: {name:string, speed:int} | Car.prototype */
 
 myCar = new Car();
 /* These calls check, because we can typeify "Car.prototype" to							*
